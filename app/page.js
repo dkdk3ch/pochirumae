@@ -431,21 +431,25 @@ function AnalyzePage({ onBack, initialProductName }) {
     }
   };
 
-  const analyze = async () => {
+　　const analyze = async () => {
     setLoading(true); setError("");
     const answerText = questions.map(q => q.text + ": " + (answers[q.id] || "回答なし")).join("\n");
+
+    // KeepaデータをローカルStorageから取得（KeepaChartが保存している場合）
+    const keepaData = window.__keepaData || null;
+
     try {
       const res = await fetch("/api/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url, productName, answers: answerText, category }),
+        body: JSON.stringify({ url, productName, answers: answerText, category, keepaData }),
       });
       const data = await res.json();
       if (data.error) throw new Error(data.error);
       setResult(data);
       setStep("result");
     } catch (e) {
-      setError("分析に失敗しました: " + e.message);
+      setError("分析に失敗しました。もう一度お試しください。");
     } finally {
       setLoading(false);
     }

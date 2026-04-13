@@ -28,15 +28,24 @@ export async function POST(request) {
   try {
     const { category, answers } = await request.json();
 
-    const response = await client.messages.create({
-      model: "claude-sonnet-4-20250514",
-      max_tokens: 2048,
-      system: PROMPT,
-      messages: [{
-        role: "user",
-        content: "カテゴリ: " + category + "\n\nユーザーの条件:\n" + answers,
-      }],
-    });
+    let response;
+    for (let i = 0; i < 3; i++) {
+      try {
+        response = await client.messages.create({
+          model: "claude-sonnet-4-20250514",
+          max_tokens: 2048,
+          system: PROMPT,
+          messages: [{ role: "user", content: "カテゴリ: " + category + "\n\nユーザーの条件:\n" + answers }],
+        });
+        break;
+      } catch (e) {
+        if (i < 2 && (e.status === 529 || e.status === 500)) {
+          await new Promise(r => setTimeout(r, 2000));
+          continue;
+        }
+        throw e;
+      }
+    }
 
     const text = response.content[0].text;
     const cleaned = text.replace(/```json|```/g, "").trim();

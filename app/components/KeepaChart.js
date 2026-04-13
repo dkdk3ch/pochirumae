@@ -40,6 +40,7 @@ export default function KeepaChart({ url, asin: asinProp }) {
       const json = await res.json();
       if (json.error) throw new Error(json.error);
       setData(json);
+　　　window.__keepaData = json;
       setLoaded(true);
     } catch (e) {
       setError("価格データの取得に失敗しました: " + e.message);
