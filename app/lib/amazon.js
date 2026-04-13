@@ -16,3 +16,17 @@ export function extractAsin(url) {
   const match = url.match(/\/dp\/([A-Z0-9]{10})/);
   return match ? match[1] : null;
 }
+
+export function extractProductNameFromUrl(url) {
+  if (!url) return "";
+  try {
+    const match = url.match(/amazon\.co\.jp\/([^\/]+)\/dp\//);
+    if (!match) return "";
+    const raw = decodeURIComponent(match[1]);
+    const name = raw.replace(/-/g, " ").trim();
+    if (name.length < 3) return "";
+    return name;
+  } catch {
+    return "";
+  }
+}
