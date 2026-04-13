@@ -415,9 +415,20 @@ function AnalyzePage({ onBack, initialProductName }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const handleAnalyzeAlternative = (name) => {
-    setProductName(name); setUrl(""); setStep("input");
-    setResult(null); setQuestions([]); setAnswers({}); setError("");
+  const handleAnalyzeAlternative = (name, asin) => {
+    setProductName(name);
+    setUrl(asin && asin.length === 10
+      ? "https://www.amazon.co.jp/dp/" + asin
+      : "");
+    if (!asin || asin.length !== 10) {
+      setError("💡 この商品はURLが特定できないため、商品名のみで分析します。Keepa価格グラフは表示されません。");
+    } else {
+      setError("");
+    }
+    setStep("input");
+    setResult(null);
+    setQuestions([]);
+    setAnswers({});
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -769,6 +780,15 @@ function CategoryPage({ onBack, onAnalyze }) {
             </button>
           </div>
         )}
+      </div>
+{/* アフィリエイト表記 */}
+      <div style={{ borderTop:"1px solid #1A1A2E", padding:"24px", maxWidth:680, margin:"0 auto" }}>
+        <p style={{ fontSize:11, color:"#333", lineHeight:1.8, textAlign:"center" }}>
+          本サイトはAmazonアソシエイト・プログラムの参加者です。<br />
+          掲載している商品リンクはアフィリエイトリンクを含む場合があり、<br />
+          商品購入時に紹介料を受け取ることがあります。<br />
+          価格・在庫状況は掲載時点のものであり、実際の情報はAmazonでご確認ください。
+        </p>
       </div>
     </main>
   );
