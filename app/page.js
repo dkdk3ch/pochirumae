@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { getAmazonUrl, extractAsin } from "./lib/amazon.js";
+import { getAmazonUrl, getAmazonSearchUrl, extractAsin } from "./lib/amazon.js";
 import KeepaChart from "./components/KeepaChart.js";
 
 const gradeConfig = {
@@ -320,12 +320,10 @@ function ResultView({ result, url, productName, onReset, onAnalyzeAlternative })
                   <p style={{ fontSize:12, color:"#CCC", lineHeight:1.6, marginBottom:6 }}>{alt.reason}</p>
                   <p style={{ fontSize:11, color:"#555", marginBottom:10 }}>👤 {alt.bestFor}</p>
                   <div style={{ display:"flex", gap:8 }}>
-                    {alt.asin && (
-                      <a href={getAmazonUrl(alt.asin)} target="_blank" rel="noopener noreferrer"
-                        style={{ flex:1, display:"block", textAlign:"center", background:"linear-gradient(135deg,#FF9900,#FF6600)", borderRadius:8, color:"#fff", fontWeight:700, fontSize:12, padding:"8px 12px", textDecoration:"none" }}>
-                        🛒 Amazonで見る
-                      </a>
-                    )}
+                    <a href={getAmazonSearchUrl(alt.name)} target="_blank" rel="noopener noreferrer"
+                      style={{ flex:1, display:"block", textAlign:"center", background:"linear-gradient(135deg,#FF9900,#FF6600)", borderRadius:8, color:"#fff", fontWeight:700, fontSize:12, padding:"8px 12px", textDecoration:"none" }}>
+                      🛒 Amazonで検索
+                    </a>
                     <button onClick={() => onAnalyzeAlternative(alt.name)}
                       style={{ flex:1, background:"#1A1A28", border:"1px solid #4CAF5040", borderRadius:8, color:"#4CAF50", fontSize:12, fontWeight:700, padding:"8px 12px", cursor:"pointer" }}>
                       🔍 この商品を判定
@@ -393,7 +391,7 @@ function ResultView({ result, url, productName, onReset, onAnalyzeAlternative })
 function AnalyzePage({ onBack, initialProductName }) {
   const [url, setUrl] = useState("");
   const [productName, setProductName] = useState(initialProductName || "");
-  const [step, setStep] = useState(initialProductName ? "input" : "input");
+  const [step, setStep] = useState("input");
   const [questions, setQuestions] = useState([]);
   const [category, setCategory] = useState("");
   const [answers, setAnswers] = useState({});
@@ -646,13 +644,12 @@ function CategoryPage({ onBack, onAnalyze }) {
                 </button>
               ))}
             </div>
-
             {selectedCategory && (
               <>
                 <p style={{ fontSize:13, color:"#666", lineHeight:1.7, marginTop:8 }}>次にサブカテゴリを選んでください。</p>
                 <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
                   {selectedCategory.subs.map(sub => (
-                    <button key={sub} onClick={() => { fetchQuestions({ label: sub }); }}
+                    <button key={sub} onClick={() => fetchQuestions({ label: sub })}
                       style={{ padding:"8px 16px", borderRadius:20, fontSize:13, cursor:"pointer",
                         border:"1px solid #333", background:"#0A0A0F", color:"#AAA", transition:"all .15s" }}
                       onMouseEnter={e => { e.currentTarget.style.borderColor="#4CAF50"; e.currentTarget.style.color="#4CAF50"; }}
@@ -711,7 +708,6 @@ function CategoryPage({ onBack, onAnalyze }) {
               <p style={{ fontSize:11, color:"#4CAF50", marginBottom:4 }}>AIコンシェルジュより</p>
               <p style={{ fontSize:14, color:"#CCC", lineHeight:1.7 }}>{result.message}</p>
             </div>
-
             {result.products?.map((p, i) => {
               const tagColor = tagColors[p.tag] || "#888";
               return (
@@ -727,12 +723,10 @@ function CategoryPage({ onBack, onAnalyze }) {
                   <p style={{ fontSize:13, color:"#CCC", lineHeight:1.6, marginBottom:6 }}>{p.reason}</p>
                   <p style={{ fontSize:11, color:"#555", marginBottom:12 }}>👤 {p.bestFor}</p>
                   <div style={{ display:"flex", gap:8 }}>
-                    {p.asin && (
-                      <a href={getAmazonUrl(p.asin)} target="_blank" rel="noopener noreferrer"
-                        style={{ flex:1, display:"block", textAlign:"center", background:"linear-gradient(135deg,#FF9900,#FF6600)", borderRadius:8, color:"#fff", fontWeight:700, fontSize:12, padding:"8px 12px", textDecoration:"none" }}>
-                        🛒 Amazonで見る
-                      </a>
-                    )}
+                    <a href={getAmazonSearchUrl(p.name)} target="_blank" rel="noopener noreferrer"
+                      style={{ flex:1, display:"block", textAlign:"center", background:"linear-gradient(135deg,#FF9900,#FF6600)", borderRadius:8, color:"#fff", fontWeight:700, fontSize:12, padding:"8px 12px", textDecoration:"none" }}>
+                      🛒 Amazonで検索
+                    </a>
                     <button onClick={() => onAnalyze(p.name)}
                       style={{ flex:1, background:"#1A1A28", border:"1px solid #FF336640", borderRadius:8, color:"#FF3366", fontSize:12, fontWeight:700, padding:"8px 12px", cursor:"pointer" }}>
                       🔍 この商品を判定
@@ -741,7 +735,6 @@ function CategoryPage({ onBack, onAnalyze }) {
                 </div>
               );
             })}
-
             <button onClick={reset} style={{ background:"#1A1A28", border:"1px solid #2A2A40", borderRadius:10, color:"#777", fontSize:13, padding:12, cursor:"pointer" }}>
               ← 最初からやり直す
             </button>
@@ -764,7 +757,7 @@ export default function Home() {
 
   return (
     <>
-      {page === "top"      && <TopPage onSelectUrl={() => setPage("analyze")} onSelectCategory={() => setPage("category")} />}
+      {page === "top"      && <TopPage onSelectUrl={() => { setAnalyzeTarget(""); setPage("analyze"); }} onSelectCategory={() => setPage("category")} />}
       {page === "analyze"  && <AnalyzePage onBack={() => setPage("top")} initialProductName={analyzeTarget} />}
       {page === "category" && <CategoryPage onBack={() => setPage("top")} onAnalyze={goToAnalyze} />}
     </>
