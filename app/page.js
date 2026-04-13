@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { getAmazonUrl, getAmazonSearchUrl, extractAsin } from "./lib/amazon.js";
+import { getAmazonUrl, getAmazonSearchUrl, extractAsin, extractProductNameFromUrl } from "./lib/amazon.js";
 import KeepaChart from "./components/KeepaChart.js";
 
 const gradeConfig = {
@@ -52,7 +52,6 @@ const CATEGORIES = [
   { id: "food", label: "🍎 食品・飲料・お酒", subs: ["お米・穀物","麺類・パスタ","調味料・ソース・ドレッシング","お菓子・スナック","コーヒー・紅茶・お茶","水・ジュース・炭酸飲料","ビール・日本酒・ワイン","健康食品・オーガニック"] },
 ];
 
-// ── FollowUpChat ─────────────────────────────────────
 function FollowUpChat({ productName, analysis }) {
   const [question, setQuestion] = useState("");
   const [messages, setMessages] = useState([]);
@@ -82,7 +81,6 @@ function FollowUpChat({ productName, analysis }) {
   return (
     <div style={{ background:"#12121A", border:"1px solid #222230", borderRadius:16, padding:"18px 20px" }}>
       <p style={{ fontSize:10, color:"#FF3366", marginBottom:12, letterSpacing:".15em" }}>💬 この商品についてさらに質問する</p>
-
       {messages.length > 0 && (
         <div style={{ display:"flex", flexDirection:"column", gap:10, marginBottom:14 }}>
           {messages.map((m, i) => (
@@ -103,16 +101,11 @@ function FollowUpChat({ productName, analysis }) {
           )}
         </div>
       )}
-
       <div style={{ display:"flex", gap:8 }}>
-        <input
-          type="text"
-          placeholder="例：防水性能はどうですか？他のカラーはある？"
-          value={question}
-          onChange={e => setQuestion(e.target.value)}
+        <input type="text" placeholder="例：防水性能はどうですか？他のカラーはある？"
+          value={question} onChange={e => setQuestion(e.target.value)}
           onKeyDown={e => e.key === "Enter" && !loading && send()}
-          style={{ flex:1, background:"#0A0A0F", border:"1px solid #333", borderRadius:10, padding:"10px 14px", color:"#E8E8F0", fontSize:13, outline:"none" }}
-        />
+          style={{ flex:1, background:"#0A0A0F", border:"1px solid #333", borderRadius:10, padding:"10px 14px", color:"#E8E8F0", fontSize:13, outline:"none" }} />
         <button onClick={send} disabled={loading || !question.trim()}
           style={{ background:"linear-gradient(135deg,#FF6B35,#FF3366)", border:"none", borderRadius:10, color:"#fff", fontWeight:700, fontSize:13, padding:"10px 16px", cursor:"pointer", opacity: loading || !question.trim() ? 0.5 : 1, whiteSpace:"nowrap" }}>
           送信
@@ -122,24 +115,20 @@ function FollowUpChat({ productName, analysis }) {
   );
 }
 
-// ── PurchaseDecisionCard（Keepa統合シンプルUI）────────
 function PurchaseDecisionCard({ result, url }) {
   const conclusion = conclusionConfig[result.conclusion?.recommendation] || conclusionConfig["consider"];
-  const timing     = result?.timing ? (timingConfig[result.timing.recommendation] || timingConfig["wait"]) : null;
-  const asin       = extractAsin(url || "");
-
-  const [keepaData, setKeepaData] = useState(window.__keepaData || null);
+  const asin = extractAsin(url || "");
+  const keepaData = typeof window !== "undefined" ? window.__keepaData : null;
 
   const toYen = (v) => v ? Math.round(v / 10).toLocaleString() + "円" : null;
   const currentYen = toYen(keepaData?.currentPrice);
   const avg90Yen   = toYen(keepaData?.avg90Price);
   const min90Yen   = toYen(keepaData?.min90Price);
 
-  // Keepaデータがある場合は価格比較でタイミングを上書き
-  let finalTiming = timing;
+  let finalTiming = result?.timing ? (timingConfig[result.timing.recommendation] || timingConfig["wait"]) : null;
   if (keepaData?.currentPrice && keepaData?.avg90Price) {
     const ratio = keepaData.currentPrice / keepaData.avg90Price;
-    if (ratio <= 0.92) finalTiming = timingConfig["now"];
+    if (ratio <= 0.92)  finalTiming = timingConfig["now"];
     else if (ratio > 1.05) finalTiming = timingConfig["sale"];
     else finalTiming = timingConfig["wait"];
   }
@@ -147,8 +136,6 @@ function PurchaseDecisionCard({ result, url }) {
   return (
     <div style={{ background:"#12121A", border:`1px solid ${conclusion.color}40`, borderRadius:16, padding:"20px" }}>
       <p style={{ fontSize:10, color:"#666", letterSpacing:".15em", marginBottom:14 }}>購入判断</p>
-
-      {/* メイン判断 */}
       <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:14 }}>
         <span style={{ fontSize:28 }}>{conclusion.icon}</span>
         <div>
@@ -156,8 +143,6 @@ function PurchaseDecisionCard({ result, url }) {
           <p style={{ fontSize:13, color:"#CCC", lineHeight:1.6, marginTop:4 }}>{result.conclusion?.message}</p>
         </div>
       </div>
-
-      {/* 価格 + タイミング */}
       <div style={{ background:"#0A0A0F", borderRadius:12, padding:"14px 16px", marginBottom:14 }}>
         <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom: keepaData ? 12 : 0 }}>
           {finalTiming && <>
@@ -165,7 +150,6 @@ function PurchaseDecisionCard({ result, url }) {
             <span style={{ fontSize:14, fontWeight:700, color:finalTiming.color }}>{finalTiming.label}</span>
           </>}
         </div>
-
         {keepaData ? (
           <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:8 }}>
             {[
@@ -186,8 +170,6 @@ function PurchaseDecisionCard({ result, url }) {
           </p>
         )}
       </div>
-
-      {/* Amazonボタン */}
       {url && asin && (
         <a href={getAmazonUrl(asin)} target="_blank" rel="noopener noreferrer"
           style={{ display:"block", textAlign:"center", background:"linear-gradient(135deg,#FF9900,#FF6600)", borderRadius:10, color:"#fff", fontWeight:700, fontSize:14, padding:"12px", textDecoration:"none" }}>
@@ -198,7 +180,6 @@ function PurchaseDecisionCard({ result, url }) {
   );
 }
 
-// ── YouTubeSection ────────────────────────────────────
 function YouTubeSection({ productName, category }) {
   const [videos, setVideos] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -247,14 +228,11 @@ function YouTubeSection({ productName, category }) {
   );
 }
 
-// ── ResultView ────────────────────────────────────────
 function ResultView({ result, url, productName, onReset, onAnalyzeAlternative }) {
   const grade = gradeConfig[result.productGrade] || gradeConfig["C"];
 
   return (
     <div style={{ display:"flex", flexDirection:"column", gap:14 }}>
-
-      {/* スコアカード */}
       <div style={{ background: grade.bg, border:"1px solid #333", borderRadius:16, padding:24 }}>
         <div style={{ display:"flex", alignItems:"center", gap:16 }}>
           <span style={{ fontSize:48, fontWeight:900, color:grade.color }}>{result.productGrade}</span>
@@ -266,10 +244,8 @@ function ResultView({ result, url, productName, onReset, onAnalyzeAlternative })
         </div>
       </div>
 
-      {/* 購入判断（Keepa統合シンプルUI）*/}
       <PurchaseDecisionCard result={result} url={url} />
 
-      {/* 良い点・気になる点 */}
       <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
         <div style={{ background:"#12121A", border:"1px solid #222230", borderRadius:16, padding:16 }}>
           <p style={{ fontSize:10, color:"#00C896", marginBottom:8 }}>良い点</p>
@@ -291,7 +267,6 @@ function ResultView({ result, url, productName, onReset, onAnalyzeAlternative })
         </div>
       </div>
 
-      {/* 向いている人・不向きな人 */}
       <div style={{ background:"#12121A", border:"1px solid #222230", borderRadius:16, padding:"16px 20px" }}>
         <div style={{ display:"flex", gap:16 }}>
           <div style={{ flex:1 }}>
@@ -306,7 +281,6 @@ function ResultView({ result, url, productName, onReset, onAnalyzeAlternative })
         </div>
       </div>
 
-      {/* 類似品比較 */}
       {result.alternatives && result.alternatives.length > 0 && (
         <div style={{ background:"#12121A", border:"1px solid #222230", borderRadius:16, padding:"18px 20px" }}>
           <p style={{ fontSize:10, color:"#CC00FF", marginBottom:16, letterSpacing:".15em" }}>🔀 類似品比較</p>
@@ -327,7 +301,7 @@ function ResultView({ result, url, productName, onReset, onAnalyzeAlternative })
                       style={{ flex:1, display:"block", textAlign:"center", background:"linear-gradient(135deg,#FF9900,#FF6600)", borderRadius:8, color:"#fff", fontWeight:700, fontSize:12, padding:"8px 12px", textDecoration:"none" }}>
                       🛒 Amazonで検索
                     </a>
-                    <button onClick={() => onAnalyzeAlternative(alt.name)}
+                    <button onClick={() => onAnalyzeAlternative(alt.name, alt.asin)}
                       style={{ flex:1, background:"#1A1A28", border:"1px solid #4CAF5040", borderRadius:8, color:"#4CAF50", fontSize:12, fontWeight:700, padding:"8px 12px", cursor:"pointer" }}>
                       🔍 この商品を判定
                     </button>
@@ -339,13 +313,8 @@ function ResultView({ result, url, productName, onReset, onAnalyzeAlternative })
         </div>
       )}
 
-      {/* Keepa価格グラフ */}
       <KeepaChart url={url} />
-
-      {/* YouTube */}
       <YouTubeSection productName={productName} category={result.category || ""} />
-
-      {/* 追加質問チャット */}
       <FollowUpChat productName={productName} analysis={result} />
 
       <button onClick={onReset} style={{ background:"#1A1A28", border:"1px solid #2A2A40", borderRadius:10, color:"#777", fontSize:13, padding:12, cursor:"pointer" }}>
@@ -355,7 +324,6 @@ function ResultView({ result, url, productName, onReset, onAnalyzeAlternative })
   );
 }
 
-// ── TopPage ───────────────────────────────────────────
 function TopPage({ onSelectUrl, onSelectCategory }) {
   return (
     <main style={{ minHeight:"100vh", background:"#0A0A0F", color:"#E8E8F0", fontFamily:"sans-serif" }}>
@@ -364,7 +332,7 @@ function TopPage({ onSelectUrl, onSelectCategory }) {
         <h1 style={{ fontSize:36, fontWeight:900, lineHeight:1.2, marginBottom:16 }}>ポチる前に、確認しよう。</h1>
         <p style={{ color:"#555", fontSize:14, lineHeight:1.8 }}>AIが類似品と比較して最適な商品を提案。URLを貼るだけで購買判断をサポートします。</p>
       </div>
-      <div style={{ maxWidth:680, margin:"0 auto", padding:"0 24px 80px", display:"grid", gridTemplateColumns:"1fr 1fr", gap:16 }}>
+      <div style={{ maxWidth:680, margin:"0 auto", padding:"0 24px 40px", display:"grid", gridTemplateColumns:"1fr 1fr", gap:16 }}>
         <button onClick={onSelectUrl} style={{ background:"#12121A", border:"1px solid #FF336640", borderRadius:20, padding:"32px 24px", cursor:"pointer", textAlign:"left", display:"flex", flexDirection:"column", gap:12 }}>
           <span style={{ fontSize:36 }}>🔍</span>
           <div>
@@ -399,13 +367,19 @@ function TopPage({ onSelectUrl, onSelectCategory }) {
           ))}
         </div>
       </div>
+      <div style={{ borderTop:"1px solid #1A1A2E", padding:"24px", maxWidth:680, margin:"0 auto" }}>
+        <p style={{ fontSize:11, color:"#333", lineHeight:1.8, textAlign:"center" }}>
+          本サイトはAmazonアソシエイト・プログラムの参加者です。<br />
+          掲載している商品リンクはアフィリエイトリンクを含む場合があり、商品購入時に紹介料を受け取ることがあります。<br />
+          価格・在庫状況は掲載時点のものであり、実際の情報はAmazonでご確認ください。
+        </p>
+      </div>
     </main>
   );
 }
 
-// ── AnalyzePage ───────────────────────────────────────
-function AnalyzePage({ onBack, initialProductName }) {
-  const [url, setUrl] = useState("");
+function AnalyzePage({ onBack, initialProductName, initialUrl }) {
+  const [url, setUrl] = useState(initialUrl || "");
   const [productName, setProductName] = useState(initialProductName || "");
   const [step, setStep] = useState("input");
   const [questions, setQuestions] = useState([]);
@@ -413,28 +387,51 @@ function AnalyzePage({ onBack, initialProductName }) {
   const [answers, setAnswers] = useState({});
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [loadingMsg, setLoadingMsg] = useState("");
   const [error, setError] = useState("");
+
+  const handleUrlChange = (val) => {
+    setUrl(val);
+    if (val.includes("amzn.to") || val.includes("amzn.asia") || val.includes("a.co")) {
+      fetch("/api/resolve-url", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: val }),
+      })
+      .then(r => r.json())
+      .then(data => {
+        if (data.resolvedUrl) {
+          setUrl(data.resolvedUrl);
+          const name = extractProductNameFromUrl(data.resolvedUrl);
+          if (name && !productName) setProductName(name);
+        }
+      })
+      .catch(() => {});
+    } else {
+      const name = extractProductNameFromUrl(val);
+      if (name && !productName) setProductName(name);
+    }
+  };
 
   const handleAnalyzeAlternative = (name, asin) => {
     setProductName(name);
-    setUrl(asin && asin.length === 10
-      ? "https://www.amazon.co.jp/dp/" + asin
-      : "");
+    setUrl(asin && asin.length === 10 ? "https://www.amazon.co.jp/dp/" + asin : "");
     if (!asin || asin.length !== 10) {
       setError("💡 この商品はURLが特定できないため、商品名のみで分析します。Keepa価格グラフは表示されません。");
     } else {
       setError("");
     }
-    setStep("input");
-    setResult(null);
-    setQuestions([]);
-    setAnswers({});
+    setStep("input"); setResult(null); setQuestions([]); setAnswers({});
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const fetchQuestions = async () => {
     if (!productName.trim() && !url.trim()) { setError("URLまたは商品名を入力してください"); return; }
     setError(""); setLoading(true);
+    const msgs = ["🤖 カテゴリを判定中...", "⏳ 少し混み合っています。そのままお待ちください...", "🔄 もう少しで完了します..."];
+    let idx = 0;
+    setLoadingMsg(msgs[0]);
+    const interval = setInterval(() => { idx = Math.min(idx + 1, msgs.length - 1); setLoadingMsg(msgs[idx]); }, 5000);
     try {
       const res = await fetch("/api/questions", {
         method: "POST", headers: { "Content-Type": "application/json" },
@@ -446,16 +443,20 @@ function AnalyzePage({ onBack, initialProductName }) {
       setCategory(data.category || "");
       setStep("questions");
     } catch (e) {
-      setError("AIが混み合っています。もう一度お試しください。");
+      setError("しばらくしてからもう一度お試しください。");
     } finally {
-      setLoading(false);
+      clearInterval(interval); setLoading(false);
     }
   };
 
   const analyze = async () => {
     setLoading(true); setError("");
+    const msgs = ["🤖 AI分析中...", "⏳ 類似品と比較しています...", "🔄 もう少しで完了します..."];
+    let idx = 0;
+    setLoadingMsg(msgs[0]);
+    const interval = setInterval(() => { idx = Math.min(idx + 1, msgs.length - 1); setLoadingMsg(msgs[idx]); }, 5000);
     const answerText = questions.map(q => q.text + ": " + (answers[q.id] || "回答なし")).join("\n");
-    const keepaData = window.__keepaData || null;
+    const keepaData = typeof window !== "undefined" ? window.__keepaData : null;
     try {
       const res = await fetch("/api/analyze", {
         method: "POST", headers: { "Content-Type": "application/json" },
@@ -465,9 +466,9 @@ function AnalyzePage({ onBack, initialProductName }) {
       if (data.error) throw new Error(data.error);
       setResult(data); setStep("result");
     } catch (e) {
-      setError("AIが混み合っています。もう一度お試しください。");
+      setError("しばらくしてからもう一度お試しください。");
     } finally {
-      setLoading(false);
+      clearInterval(interval); setLoading(false);
     }
   };
 
@@ -504,46 +505,25 @@ function AnalyzePage({ onBack, initialProductName }) {
           <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
             <div style={{ background:"#12121A", border:"1px solid #222230", borderRadius:16, padding:"14px 16px" }}>
               <p style={{ fontSize:10, color:"#FF3366", marginBottom:6 }}>AMAZON URL</p>
-              <input type="text" placeholder="https://www.amazon.co.jp/dp/..." value={url} onChange={e => {
-  const val = e.target.value;
-  setUrl(val);
-  // 短縮URLまたは通常URLの処理
-  if (val.includes("amzn.to") || val.includes("amzn.asia") || val.includes("a.co")) {
-    // 短縮URL → サーバーで解決
-    fetch("/api/resolve-url", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ url: val }),
-    })
-    .then(r => r.json())
-    .then(data => {
-      if (data.resolvedUrl) {
-        setUrl(data.resolvedUrl);
-        const name = extractProductNameFromUrl(data.resolvedUrl);
-        if (name && !productName) setProductName(name);
-      }
-    })
-    .catch(() => {});
-  } else {
-    // 通常URL → そのまま商品名抽出
-    const name = extractProductNameFromUrl(val);
-    if (name && !productName) setProductName(name);
-  }
-}}
+              <input type="text" placeholder="https://www.amazon.co.jp/dp/... または 短縮URL" value={url}
+                onChange={e => handleUrlChange(e.target.value)}
+                style={{ background:"transparent", border:"none", outline:"none", color:"#E8E8F0", width:"100%", fontSize:14 }} />
             </div>
             <div style={{ background:"#12121A", border:"1px solid #222230", borderRadius:16, padding:"14px 16px" }}>
               <p style={{ fontSize:10, color:"#888", marginBottom:6 }}>商品名</p>
-              <input type="text" placeholder="例：Anker PowerCore 10000" value={productName} onChange={e => setProductName(e.target.value)} onKeyDown={e => e.key === "Enter" && fetchQuestions()} style={{ background:"transparent", border:"none", outline:"none", color:"#E8E8F0", width:"100%", fontSize:14 }} />
+              <input type="text" placeholder="例：Anker PowerCore 10000" value={productName}
+                onChange={e => setProductName(e.target.value)}
+                onKeyDown={e => e.key === "Enter" && fetchQuestions()}
+                style={{ background:"transparent", border:"none", outline:"none", color:"#E8E8F0", width:"100%", fontSize:14 }} />
             </div>
             {error && (
-              <div style={{ background:"#1A0A0A", border:"1px solid #F4433640", borderRadius:10, padding:"12px 16px" }}>
-                <p style={{ color:"#F44336", fontSize:13, marginBottom:8 }}>{error}</p>
-                <button onClick={fetchQuestions} style={{ background:"#F44336", border:"none", borderRadius:8, color:"#fff", fontSize:12, fontWeight:700, padding:"8px 16px", cursor:"pointer" }}>再試行する</button>
+              <div style={{ background:"#1A1A28", border:"1px solid #FFC10740", borderRadius:10, padding:"10px 14px" }}>
+                <p style={{ color:"#FFC107", fontSize:12 }}>{error}</p>
               </div>
             )}
             <button onClick={fetchQuestions} disabled={loading || (!productName.trim() && !url.trim())}
               style={{ background:"linear-gradient(135deg,#FF6B35,#FF3366)", border:"none", borderRadius:12, color:"#fff", fontWeight:700, fontSize:16, padding:16, cursor:"pointer", opacity: loading || (!productName.trim() && !url.trim()) ? 0.5 : 1 }}>
-              {loading ? "🤖 カテゴリ判定中..." : "次へ →"}
+              {loading ? loadingMsg : "次へ →"}
             </button>
           </div>
         )}
@@ -580,9 +560,8 @@ function AnalyzePage({ onBack, initialProductName }) {
             )}
             <button onClick={analyze} disabled={loading}
               style={{ background:"linear-gradient(135deg,#FF6B35,#FF3366)", border:"none", borderRadius:12, color:"#fff", fontWeight:700, fontSize:16, padding:16, cursor:"pointer", opacity: loading ? 0.5 : 1 }}>
-              {loading ? "🤖 AI分析中..." : "AIに判定してもらう →"}
+              {loading ? loadingMsg : "AIに判定してもらう →"}
             </button>
-            {loading && <p style={{ textAlign:"center", color:"#444", fontSize:12 }}>類似品と比較しています。少々お待ちください...</p>}
             <button onClick={() => setStep("input")} style={{ background:"none", border:"none", color:"#555", fontSize:13, cursor:"pointer", padding:0 }}>← 商品を変更する</button>
           </div>
         )}
@@ -595,7 +574,6 @@ function AnalyzePage({ onBack, initialProductName }) {
   );
 }
 
-// ── CategoryPage ──────────────────────────────────────
 function CategoryPage({ onBack, onAnalyze }) {
   const [step, setStep] = useState("category");
   const [selectedCategory, setSelectedCategory] = useState(null);
@@ -604,11 +582,16 @@ function CategoryPage({ onBack, onAnalyze }) {
   const [answers, setAnswers] = useState({});
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [loadingMsg, setLoadingMsg] = useState("");
   const [error, setError] = useState("");
   const [selectedSub, setSelectedSub] = useState("");
 
   const fetchQuestions = async (label) => {
     setLoading(true); setError(""); setSelectedSub(label);
+    const msgs = ["🤖 質問を準備中...", "⏳ 少し混み合っています...", "🔄 もう少しで完了します..."];
+    let idx = 0;
+    setLoadingMsg(msgs[0]);
+    const interval = setInterval(() => { idx = Math.min(idx + 1, msgs.length - 1); setLoadingMsg(msgs[idx]); }, 5000);
     try {
       const res = await fetch("/api/questions", {
         method: "POST", headers: { "Content-Type": "application/json" },
@@ -619,14 +602,18 @@ function CategoryPage({ onBack, onAnalyze }) {
       setQuestions(data.questions || []);
       setStep("questions");
     } catch (e) {
-      setError("AIが混み合っています。もう一度お試しください。");
+      setError("しばらくしてからもう一度お試しください。");
     } finally {
-      setLoading(false);
+      clearInterval(interval); setLoading(false);
     }
   };
 
   const fetchRecommendations = async () => {
     setLoading(true); setError("");
+    const msgs = ["🤖 おすすめを探しています...", "⏳ 最適な商品を選んでいます...", "🔄 もう少しで完了します..."];
+    let idx = 0;
+    setLoadingMsg(msgs[0]);
+    const interval = setInterval(() => { idx = Math.min(idx + 1, msgs.length - 1); setLoadingMsg(msgs[idx]); }, 5000);
     const answerText = questions.map(q => q.text + ": " + (answers[q.id] || "回答なし")).join("\n");
     try {
       const res = await fetch("/api/concierge", {
@@ -637,9 +624,9 @@ function CategoryPage({ onBack, onAnalyze }) {
       if (data.error) throw new Error(data.error);
       setResult(data); setStep("result");
     } catch (e) {
-      setError("AIが混み合っています。もう一度お試しください。");
+      setError("しばらくしてからもう一度お試しください。");
     } finally {
-      setLoading(false);
+      clearInterval(interval); setLoading(false);
     }
   };
 
@@ -674,10 +661,9 @@ function CategoryPage({ onBack, onAnalyze }) {
 
         {step === "category" && (
           <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
-
-            {/* 自由検索窓 */}
             <div style={{ background:"#12121A", border:"1px solid #4CAF5040", borderRadius:16, padding:"14px 16px", display:"flex", gap:8 }}>
-              <input type="text" placeholder="🔍 探している商品を自由に入力（例：在宅勤務用マイク）" value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
+              <input type="text" placeholder="🔍 探している商品を自由に入力（例：在宅勤務用マイク）"
+                value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
                 onKeyDown={e => e.key === "Enter" && searchQuery.trim() && fetchQuestions(searchQuery.trim())}
                 style={{ flex:1, background:"transparent", border:"none", outline:"none", color:"#E8E8F0", fontSize:14 }} />
               <button onClick={() => searchQuery.trim() && fetchQuestions(searchQuery.trim())} disabled={!searchQuery.trim() || loading}
@@ -685,10 +671,7 @@ function CategoryPage({ onBack, onAnalyze }) {
                 検索
               </button>
             </div>
-
             <p style={{ fontSize:12, color:"#444", textAlign:"center" }}>または カテゴリから選ぶ</p>
-
-            {/* 大カテゴリ */}
             <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8 }}>
               {CATEGORIES.map(cat => (
                 <button key={cat.id} onClick={() => setSelectedCategory(selectedCategory?.id === cat.id ? null : cat)}
@@ -700,8 +683,6 @@ function CategoryPage({ onBack, onAnalyze }) {
                 </button>
               ))}
             </div>
-
-            {/* サブカテゴリ */}
             {selectedCategory && (
               <>
                 <p style={{ fontSize:13, color:"#666", marginTop:4 }}>サブカテゴリを選んでください：</p>
@@ -717,7 +698,7 @@ function CategoryPage({ onBack, onAnalyze }) {
                 </div>
               </>
             )}
-            {loading && <p style={{ textAlign:"center", color:"#444", fontSize:12 }}>質問を準備中...</p>}
+            {loading && <p style={{ textAlign:"center", color:"#888", fontSize:13 }}>{loadingMsg}</p>}
             {error && (
               <div style={{ background:"#1A0A0A", border:"1px solid #F4433640", borderRadius:10, padding:"12px 16px" }}>
                 <p style={{ color:"#F44336", fontSize:13, marginBottom:8 }}>{error}</p>
@@ -760,9 +741,8 @@ function CategoryPage({ onBack, onAnalyze }) {
             )}
             <button onClick={fetchRecommendations} disabled={loading}
               style={{ background:"linear-gradient(135deg,#00C896,#4CAF50)", border:"none", borderRadius:12, color:"#fff", fontWeight:700, fontSize:16, padding:16, cursor:"pointer", opacity: loading ? 0.5 : 1 }}>
-              {loading ? "🤖 おすすめを探しています..." : "AIにおすすめを聞く →"}
+              {loading ? loadingMsg : "AIにおすすめを聞く →"}
             </button>
-            {loading && <p style={{ textAlign:"center", color:"#444", fontSize:12 }}>最適な商品を選んでいます。少々お待ちください...</p>}
             <button onClick={() => setStep("category")} style={{ background:"none", border:"none", color:"#555", fontSize:13, cursor:"pointer", padding:0 }}>← カテゴリを選び直す</button>
           </div>
         )}
@@ -806,34 +786,26 @@ function CategoryPage({ onBack, onAnalyze }) {
           </div>
         )}
       </div>
-{/* アフィリエイト表記 */}
-      <div style={{ borderTop:"1px solid #1A1A2E", padding:"24px", maxWidth:680, margin:"0 auto" }}>
-        <p style={{ fontSize:11, color:"#333", lineHeight:1.8, textAlign:"center" }}>
-          本サイトはAmazonアソシエイト・プログラムの参加者です。<br />
-          掲載している商品リンクはアフィリエイトリンクを含む場合があり、<br />
-          商品購入時に紹介料を受け取ることがあります。<br />
-          価格・在庫状況は掲載時点のものであり、実際の情報はAmazonでご確認ください。
-        </p>
-      </div>
     </main>
   );
 }
 
-// ── Home ──────────────────────────────────────────────
 export default function Home() {
   const [page, setPage] = useState("top");
   const [analyzeTarget, setAnalyzeTarget] = useState("");
+  const [analyzeUrl, setAnalyzeUrl] = useState("");
 
-  const goToAnalyze = (name) => {
+  const goToAnalyze = (name, url) => {
     setAnalyzeTarget(name);
+    setAnalyzeUrl(url || "");
     setPage("analyze");
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   return (
     <>
-      {page === "top"      && <TopPage onSelectUrl={() => { setAnalyzeTarget(""); setPage("analyze"); }} onSelectCategory={() => setPage("category")} />}
-      {page === "analyze"  && <AnalyzePage onBack={() => setPage("top")} initialProductName={analyzeTarget} />}
+      {page === "top"      && <TopPage onSelectUrl={() => { setAnalyzeTarget(""); setAnalyzeUrl(""); setPage("analyze"); }} onSelectCategory={() => setPage("category")} />}
+      {page === "analyze"  && <AnalyzePage onBack={() => setPage("top")} initialProductName={analyzeTarget} initialUrl={analyzeUrl} />}
       {page === "category" && <CategoryPage onBack={() => setPage("top")} onAnalyze={goToAnalyze} />}
     </>
   );
