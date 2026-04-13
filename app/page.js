@@ -425,7 +425,7 @@ function AnalyzePage({ onBack, initialProductName }) {
       setCategory(data.category || "");
       setStep("questions");
     } catch (e) {
-      setError("質問の生成に失敗しました: " + e.message);
+      setError("AIが混み合っています。しばらく待ってから「再試行」を押してください。");
     } finally {
       setLoading(false);
     }
@@ -449,7 +449,7 @@ function AnalyzePage({ onBack, initialProductName }) {
       setResult(data);
       setStep("result");
     } catch (e) {
-      setError("分析に失敗しました。もう一度お試しください。");
+      setError("AIが混み合っています。しばらく待ってから「再試行」を押してください。");
     } finally {
       setLoading(false);
     }
@@ -500,7 +500,15 @@ function AnalyzePage({ onBack, initialProductName }) {
                 onKeyDown={e => e.key === "Enter" && fetchQuestions()}
                 style={{ background:"transparent", border:"none", outline:"none", color:"#E8E8F0", width:"100%", fontSize:14 }} />
             </div>
-            {error && <p style={{ color:"#F44336", fontSize:13 }}>{error}</p>}
+            {error && (
+  <div style={{ background:"#1A0A0A", border:"1px solid #F4433640", borderRadius:10, padding:"12px 16px" }}>
+    <p style={{ color:"#F44336", fontSize:13, marginBottom:8 }}>{error}</p>
+    <button onClick={fetchQuestions} disabled={loading}
+      style={{ background:"#F44336", border:"none", borderRadius:8, color:"#fff", fontSize:12, fontWeight:700, padding:"8px 16px", cursor:"pointer" }}>
+      再試行する
+    </button>
+  </div>
+)}
             <button onClick={fetchQuestions} disabled={loading || (!productName.trim() && !url.trim())}
               style={{ background:"linear-gradient(135deg,#FF6B35,#FF3366)", border:"none", borderRadius:12, color:"#fff", fontWeight:700, fontSize:16, padding:16, cursor:"pointer", opacity: loading || (!productName.trim() && !url.trim()) ? 0.5 : 1 }}>
               {loading ? "🤖 カテゴリ判定中..." : "次へ →"}
@@ -535,7 +543,15 @@ function AnalyzePage({ onBack, initialProductName }) {
                 )}
               </div>
             ))}
-            {error && <p style={{ color:"#F44336", fontSize:13 }}>{error}</p>}
+            {error && (
+  <div style={{ background:"#1A0A0A", border:"1px solid #F4433640", borderRadius:10, padding:"12px 16px" }}>
+    <p style={{ color:"#F44336", fontSize:13, marginBottom:8 }}>{error}</p>
+    <button onClick={fetchQuestions} disabled={loading}
+      style={{ background:"#F44336", border:"none", borderRadius:8, color:"#fff", fontSize:12, fontWeight:700, padding:"8px 16px", cursor:"pointer" }}>
+      再試行する
+    </button>
+  </div>
+)}
             <button onClick={analyze} disabled={loading}
               style={{ background:"linear-gradient(135deg,#FF6B35,#FF3366)", border:"none", borderRadius:12, color:"#fff", fontWeight:700, fontSize:16, padding:16, cursor:"pointer", opacity: loading ? 0.5 : 1 }}>
               {loading ? "🤖 AI分析中..." : "AIに判定してもらう →"}
@@ -595,7 +611,7 @@ function CategoryPage({ onBack, onAnalyze }) {
       setResult(data);
       setStep("result");
     } catch (e) {
-      setError("提案の生成に失敗しました: " + e.message);
+      setError("AIが混み合っています。しばらく待ってから「再試行」を押してください。");
     } finally {
       setLoading(false);
     }
@@ -665,7 +681,15 @@ function CategoryPage({ onBack, onAnalyze }) {
               </>
             )}
             {loading && <p style={{ textAlign:"center", color:"#444", fontSize:12 }}>質問を準備中...</p>}
-            {error && <p style={{ color:"#F44336", fontSize:13 }}>{error}</p>}
+            {error && (
+  <div style={{ background:"#1A0A0A", border:"1px solid #F4433640", borderRadius:10, padding:"12px 16px" }}>
+    <p style={{ color:"#F44336", fontSize:13, marginBottom:8 }}>{error}</p>
+    <button onClick={fetchQuestions} disabled={loading}
+      style={{ background:"#F44336", border:"none", borderRadius:8, color:"#fff", fontSize:12, fontWeight:700, padding:"8px 16px", cursor:"pointer" }}>
+      再試行する
+    </button>
+  </div>
+)}
           </div>
         )}
 
@@ -696,7 +720,15 @@ function CategoryPage({ onBack, onAnalyze }) {
                 )}
               </div>
             ))}
-            {error && <p style={{ color:"#F44336", fontSize:13 }}>{error}</p>}
+            {error && (
+  <div style={{ background:"#1A0A0A", border:"1px solid #F4433640", borderRadius:10, padding:"12px 16px" }}>
+    <p style={{ color:"#F44336", fontSize:13, marginBottom:8 }}>{error}</p>
+    <button onClick={fetchQuestions} disabled={loading}
+      style={{ background:"#F44336", border:"none", borderRadius:8, color:"#fff", fontSize:12, fontWeight:700, padding:"8px 16px", cursor:"pointer" }}>
+      再試行する
+    </button>
+  </div>
+)}
             <button onClick={fetchRecommendations} disabled={loading}
               style={{ background:"linear-gradient(135deg,#00C896,#4CAF50)", border:"none", borderRadius:12, color:"#fff", fontWeight:700, fontSize:16, padding:16, cursor:"pointer", opacity: loading ? 0.5 : 1 }}>
               {loading ? "🤖 おすすめを探しています..." : "AIにおすすめを聞く →"}

@@ -26,24 +26,23 @@ export async function POST(request) {
     ].filter(Boolean).join("\n");
 
     let response;
-    for (let i = 0; i < 3; i++) {
+　　for (let i = 0; i < 5; i++) {
       try {
         response = await client.messages.create({
           model: "claude-sonnet-4-20250514",
-          max_tokens: 2048,
-          system: getSystemPrompt(),
-          messages: [{ role: "user", content: userMessage }],
+          max_tokens: 1024,
+          system: PROMPT,
+          messages: [{ role: "user", content: "商品名: " + (productName || "不明") + "\nURL: " + (url || "未入力") }],
         });
         break;
       } catch (e) {
-        if (i < 2 && (e.status === 529 || e.status === 500)) {
-          await new Promise(r => setTimeout(r, 2000));
+        if (i < 4 && (e.status === 529 || e.status === 500)) {
+          await new Promise(r => setTimeout(r, (i + 1) * 3000));
           continue;
         }
         throw e;
       }
     }
-
     const text = response.content[0].text;
     const cleaned = text.replace(/```json|```/g, "").trim();
     const start = cleaned.indexOf("{");
