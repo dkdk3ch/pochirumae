@@ -33,19 +33,20 @@ export async function POST(request) {
       try {
         response = await client.messages.create({
           model: "claude-sonnet-4-20250514",
-          max_tokens: 1024,
+          max_tokens: 2048,
           system: PROMPT,
-          messages: [{ role: "user", content: "商品名: " + (productName || "不明") + "\nURL: " + (url || "未入力") }],
+          messages: [{ role: "user", content: "カテゴリ: " + (category || "不明") + "\n\nユーザーの条件:\n" + (answers || "なし") }],
         });
         break;
       } catch (e) {
         if (i < 4 && (e.status === 529 || e.status === 500)) {
-          await new Promise(r => setTimeout(r, (i + 1) * 3000));
+          await new Promise(r => setTimeout(r, (i + 1) * 4000));
           continue;
         }
         throw e;
       }
     }
+
     const text = response.content[0].text;
     const cleaned = text.replace(/```json|```/g, "").trim();
     const start = cleaned.indexOf("{");
