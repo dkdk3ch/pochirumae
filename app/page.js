@@ -360,7 +360,7 @@ function TopPage({ onSelectUrl, onSelectCategory }) {
   return (
     <main style={{ minHeight:"100vh", background:"#0A0A0F", color:"#E8E8F0", fontFamily:"sans-serif" }}>
       <div style={{ padding:"60px 24px 40px", maxWidth:680, margin:"0 auto", textAlign:"center" }}>
-        <p style={{ fontSize:11, letterSpacing:".25em", color:"#FF3366", marginBottom:12 }}>POCHIRUMAE.COM</p>
+        <p style={{ fontSize:11, letterSpacing:".25em", color:"#FF3366", marginBottom:12 }}>POCHIMARU.JP</p>
         <h1 style={{ fontSize:36, fontWeight:900, lineHeight:1.2, marginBottom:16 }}>ポチる前に、確認しよう。</h1>
         <p style={{ color:"#555", fontSize:14, lineHeight:1.8 }}>AIが類似品と比較して最適な商品を提案。URLを貼るだけで購買判断をサポートします。</p>
       </div>
