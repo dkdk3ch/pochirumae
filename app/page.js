@@ -504,7 +504,32 @@ function AnalyzePage({ onBack, initialProductName }) {
           <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
             <div style={{ background:"#12121A", border:"1px solid #222230", borderRadius:16, padding:"14px 16px" }}>
               <p style={{ fontSize:10, color:"#FF3366", marginBottom:6 }}>AMAZON URL</p>
-              <input type="text" placeholder="https://www.amazon.co.jp/dp/..." value={url} onChange={e => setUrl(e.target.value)} style={{ background:"transparent", border:"none", outline:"none", color:"#E8E8F0", width:"100%", fontSize:14 }} />
+              <input type="text" placeholder="https://www.amazon.co.jp/dp/..." value={url} onChange={e => {
+  const val = e.target.value;
+  setUrl(val);
+  // 短縮URLまたは通常URLの処理
+  if (val.includes("amzn.to") || val.includes("amzn.asia") || val.includes("a.co")) {
+    // 短縮URL → サーバーで解決
+    fetch("/api/resolve-url", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ url: val }),
+    })
+    .then(r => r.json())
+    .then(data => {
+      if (data.resolvedUrl) {
+        setUrl(data.resolvedUrl);
+        const name = extractProductNameFromUrl(data.resolvedUrl);
+        if (name && !productName) setProductName(name);
+      }
+    })
+    .catch(() => {});
+  } else {
+    // 通常URL → そのまま商品名抽出
+    const name = extractProductNameFromUrl(val);
+    if (name && !productName) setProductName(name);
+  }
+}}
             </div>
             <div style={{ background:"#12121A", border:"1px solid #222230", borderRadius:16, padding:"14px 16px" }}>
               <p style={{ fontSize:10, color:"#888", marginBottom:6 }}>商品名</p>
